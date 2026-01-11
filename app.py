@@ -42,29 +42,31 @@ if uploaded_file is not None:
 
     # Preprocessing
     gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaModify blur? no.
-GaussianBlur(gray, (5, 5), 0)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
+    # Edge detection
     edges = cv2.Canny(blur, 50, 150)
 
     # Adaptive thresholding
     thresh = cv2.adaptiveThreshold(
-        gray, 255,
+        blur, 255,
         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv2.THRESH_BINARY_INV,
         11, 2
     )
 
     # Find contours
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(
+        thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
 
     output = img_cv.copy()
     records = []
-
     obj_id = 1
+
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area < 500:  # Noise filtering
+        if area < 500:  # Remove noise
             continue
 
         shape = classify_shape(cnt)
@@ -78,10 +80,12 @@ GaussianBlur(gray, (5, 5), 0)
         else:
             cx, cy = 0, 0
 
-        # Draw contour
+        # Draw contour and label
         cv2.drawContours(output, [cnt], -1, (0, 255, 0), 2)
-        cv2.putText(output, shape, (cx - 30, cy),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        cv2.putText(
+            output, shape, (cx - 30, cy),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2
+        )
 
         records.append([
             obj_id,
@@ -91,13 +95,12 @@ GaussianBlur(gray, (5, 5), 0)
         ])
         obj_id += 1
 
-    # Convert image for display
-    output_rgb = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
-
+    # Display results
     col1, col2 = st.columns(2)
 
     with col1:
         st.subheader("Detected Shapes")
+        output_rgb = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
         st.image(output_rgb, use_column_width=True)
 
     with col2:
